@@ -11,8 +11,10 @@ import (
 )
 
 var (
-	dbpath = "boltdb.db"
 	curDir string
+
+	dbpath = "boltdb.db"
+	usage  = "Usage: BoltGUI [port] [PathToBoltDB]"
 )
 
 func main() {
@@ -21,8 +23,6 @@ func main() {
 
 	if len(os.Args) > 1 {
 		dbpath = os.Args[1]
-	} else {
-		dbpath = curDir + "/" + dbpath
 	}
 
 	http.HandleFunc("/exit", exit)
@@ -33,8 +33,16 @@ func main() {
 	http.HandleFunc("/setEntry", setEntryHandler)
 	http.HandleFunc("/setBucket", setBucketHandler)
 
+	http.HandleFunc("/getData", getData)
+
 	http.Handle("/", http.FileServer(http.Dir(curDir+"/html")))
 	http.ListenAndServe(":8080", nil)
+}
+
+func getData(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`[{"name":"Bucket1","entries":[{"key":"key1","value":"value1"}]},{"name":"Bucket2","entries":[{"key":"key1","value":"value1"}]}]`))
 }
 
 func delEntryHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,25 +162,25 @@ func setBucket(bucket string) {
 	}
 }
 
-func getEntries(bucket string) map[string]string {
+func getEntries(bucket string) []Entry {
 	db, err := bolt.Open(dbpath, 0600, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer db.Close()
 
-	entriesMap := map[string]string{}
+	entries := []Entry{}
 
 	db.View(func(tx *bolt.Tx) error {
 		curBucket := tx.Bucket([]byte(bucket))
 
 		curBucket.ForEach(func(k, v []byte) error {
-			entriesMap[string(k)] = string(v)
+			entries = append(entries, Entry{string(k), string(v)})
 			return nil
 		})
 		return nil
 	})
-	return entriesMap
+	return entries
 }
 
 func getBuckets() []string {
@@ -191,4 +199,9 @@ func getBuckets() []string {
 		return nil
 	})
 	return bucketsList
+}
+
+type Entry struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }

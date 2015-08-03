@@ -4,6 +4,7 @@ $(document).ready(function() {
   $(document).on('click', ".bucket h4", function() {
     getBucketEnties($(this).parent());
      $(this).parent().children(".collapse").toggle(100);
+     stopEditing();
   });
 
   $(document).on('dblclick', ".editable", function() {
@@ -22,6 +23,7 @@ $(document).ready(function() {
     deleteBucketEntry(getBucket(row), getKey(row));
     $(row).hide(200);
   });
+
   $(document).on('click', ".del-bucket", function(){
   	var bucket = getBucket(this);
     if (!confirm("You really want to delete bucket "+bucket)) return;
@@ -31,7 +33,7 @@ $(document).ready(function() {
   
   $(document).on('click', ".createEntry", function(){
     var table = $(this).parent().find("table");
-    var newRow = $("<tr class='editable'><td class='del'>Del</td><td><div class='key'>New key here</div></td><td><div class='value'>New value here</div></td></tr>");
+    var newRow = $("<tr class='editable'><td class='del'>Del</td><td><div class='key'>New key here</div></td><td class='cell-val'><div class='value'>New value here</div></td></tr>");
     $("tr:first", table).after(newRow);
     startEditing(newRow);
   });
@@ -67,7 +69,7 @@ function fillEntries(bucket, entries) {
   		};
     		
 
-      $(table).append("<tr class='editable'><td class='del'>Del</td><td><div class='key'>" + key + "</div></td><td><div class='value'>" + value + "</div></td></tr>");
+      $(table).append("<tr class='editable'><td class='del'>Del</td><td><div class='key'>" + key + "</div></td><td class='cell-val'><div class='value'>" + value + "</div></td></tr>");
 
     }
   }
@@ -80,7 +82,7 @@ function fillEntries(bucket, entries) {
 function fillBuckets(buckets) {
   buckets.forEach(function(bucket, index, array) {
     //Create main container for bucket
-    $("body").append("<div class=\"bucket\"><div class='del-bucket btn btn-xs'></div><h4>" + bucket + "</h4></div>");
+    $(".buckets").append("<div class=\"bucket\"><div class='del-bucket btn btn-xs'></div><h4>" + bucket + "</h4></div>");
   });
 }
 
@@ -112,6 +114,7 @@ function deleteBucketEntry(bucket, key) {
 }
 
 function saveBucketEntry(bucket, key, value) {
+  alert(bucket+key+value);
   $.post('/setEntry',{bucket:bucket,key:key,value:value}, function( data ) {
 });
 }
@@ -154,22 +157,23 @@ function showEditable(row) {
 function showButtos(row) {
   var saveButton = $('<input/>', {
     type: "button",
-    class: "btn btn-success save-btn",
+    class: "btn btn-success save-btn pull-right",
     value: "Save"
   });
   var cancelButton = $('<input/>', {
     type: "button",
-    class: "btn btn-default cancel-btn",
+    class: "btn btn-default cancel-btn pull-right",
     value: "Cancel"
   });
 
   saveButton.click(function() {
-    var row = $(this).parent();
+    //var row = $(this).parent();
     var key = getKey(row);
     var value = getValue(row);
     var bucket = getBucket(row);
 
     var isNew = $(row).find(".old-key").val() != key;
+    alert(key);
 
     $(row).find(".old-key").val(key);
     $(row).find(".old-value").val(value);
@@ -188,8 +192,9 @@ function showButtos(row) {
     stopEditing();
   })
 
-  $(row).append(saveButton);
-  $(row).append(cancelButton);
+  $(row).find(".cell-val").append(cancelButton);
+  $(row).find(".cell-val").append(saveButton);
+  
 
 }
 

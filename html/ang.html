@@ -1,0 +1,48 @@
+<!doctype html>
+<html ng-app="BoltGUI">
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+
+
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.3/angular.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/boltguiapp.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Buckets</h2>
+      <div ng-controller="BucketsController as bucketsList">
+
+          <div ng-repeat="bucket in bucketsList.buckets" class="bucket">
+            <h4 ng-click="bucketsList.getEntries(bucket.name)" role="button" data-toggle="collapse" href="#bucket-{{bucket.name}}" aria-expanded="true" aria-controls="bucket-{{bucket.name}}">{{bucket.name}}</h4>
+
+            <div class="collapse" id="bucket-{{bucket.name}}">
+              <div class="well">
+                <table class="table">
+                  <tr>
+                    <th></th>
+                    <th>Key</th>
+                    <th>Value</th>
+                  </tr>
+                  <tr ng-repeat="entry in bucket.entries">
+                    <td class="del-entry">Del</td>
+                    <td>{{entry.key}}</td> 
+                    <td>{{entry.value}}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+      
+        <form ng-submit="bucketsList.addBucket()">
+          <input type="text" ng-model="bucketsList.bucketName"  size="30"
+                 placeholder="add new bucket">
+          <input class="btn-primary" type="submit" value="add">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
