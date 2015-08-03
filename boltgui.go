@@ -19,7 +19,6 @@ var (
 
 func main() {
 	curDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
-	fmt.Println(curDir)
 
 	if len(os.Args) > 1 {
 		dbpath = os.Args[1]

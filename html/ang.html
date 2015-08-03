@@ -16,10 +16,12 @@
       <div ng-controller="BucketsController as bucketsList">
 
           <div ng-repeat="bucket in bucketsList.buckets" class="bucket">
+            <div class='cross del-bucket btn btn-xs'></div>
             <h4 ng-click="bucketsList.getEntries(bucket.name)" role="button" data-toggle="collapse" href="#bucket-{{bucket.name}}" aria-expanded="true" aria-controls="bucket-{{bucket.name}}">{{bucket.name}}</h4>
 
             <div class="collapse" id="bucket-{{bucket.name}}">
               <div class="well">
+              <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".edit-entry">Large modal</button>
                 <table class="table">
                   <tr>
                     <th></th>
@@ -27,7 +29,7 @@
                     <th>Value</th>
                   </tr>
                   <tr ng-repeat="entry in bucket.entries">
-                    <td class="del-entry">Del</td>
+                    <td class="cross del-entry" role="button" ng-click="bucketsList.removeEntry(bucket.name, $index)"></td>
                     <td>{{entry.key}}</td> 
                     <td>{{entry.value}}</td>
                   </tr>
@@ -44,5 +46,23 @@
         </form>
       </div>
     </div>
+
+<div class="modal fade edit-entry">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Modal title</h4>
+      </div>
+      <div class="modal-body">
+        <p>One fine body&hellip;</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
   </body>
 </html>

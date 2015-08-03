@@ -1,4 +1,4 @@
-.del-bucket:before  { content: "\2718"; }
+.cross:before  { content: "\2718"; }
 
 
 h4 {
@@ -16,7 +16,7 @@ h4 {
 }
 
 .del-entry {
-	width: 20px;
+	width: 25px;
 }
 
 .key {

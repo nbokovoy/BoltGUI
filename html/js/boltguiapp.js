@@ -24,14 +24,12 @@ angular.module('BoltGUI', [])
          response.forEach(function(entry){
           buck.entries.push({key:entry.key, value:entry.value});
          });
-        //value = JSON.stringify(JSON.parse(response) ,null, '\t');
-        //alert(bucketsList.buckets[bucket].entries);
-        //bucketsList.buckets[bucket].entries = response;
     });
     }
     
 
     bucketsList.addBucket = function() {
+      $('.edit-entry').modal();
       bucketsList.buckets.push({
         name: bucketsList.bucketName,
         entries: []
@@ -39,4 +37,21 @@ angular.module('BoltGUI', [])
       bucketsList.bucketName = '';
     };
 
+    bucketsList.removeEntry = function(bucket, index){
+      var buck = bucketsList.buckets.filter(function(value){
+          return value.name == bucket;
+        })[0];
+      var key = buck.entries[index].key;
+
+      buck.entries.splice(index, 1);
+
+      $http({
+        method: 'POST',
+        url: '/delEntry',
+        data: $.param({bucket: bucket, key: key}),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+      })
+    };
+
   });
+
