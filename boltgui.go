@@ -5,17 +5,24 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/boltdb/bolt"
 )
 
 var (
 	dbpath = "boltdb.db"
+	curDir string
 )
 
 func main() {
+	curDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	fmt.Println(curDir)
+
 	if len(os.Args) > 1 {
 		dbpath = os.Args[1]
+	} else {
+		dbpath = curDir + "/" + dbpath
 	}
 
 	http.HandleFunc("/exit", exit)
@@ -26,7 +33,7 @@ func main() {
 	http.HandleFunc("/setEntry", setEntryHandler)
 	http.HandleFunc("/setBucket", setBucketHandler)
 
-	http.Handle("/", http.FileServer(http.Dir("/home/nikita/go/src/BoltGUI/html")))
+	http.Handle("/", http.FileServer(http.Dir(curDir+"/html")))
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -47,7 +54,6 @@ func setEntryHandler(w http.ResponseWriter, r *http.Request) {
 
 func setBucketHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	fmt.Println(r)
 	setBucket(r.FormValue("bucket"))
 }
 

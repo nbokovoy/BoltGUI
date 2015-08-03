@@ -2,7 +2,7 @@ $(document).ready(function() {
   getBuckets();
 
   $(document).on('click', ".bucket h4", function() {
-    getBucketEnties($(this).parent());
+    getBucketEnties(this);
      $(this).parent().children(".collapse").toggle(100);
   });
 
@@ -11,20 +11,14 @@ $(document).ready(function() {
       startEditing(this);
     }
   });
-  $(document).on('click', ".exit-btn", function() {
-    $.post('/exit');
-     location.reload();
-  });
 
   $(document).on('click', ".del", function() {
     var row = $(this).parent();
-    if (!confirm("You really want to delete entry '"+getKey(row)+"' from "+getBucket(row))) return;
     deleteBucketEntry(getBucket(row), getKey(row));
     $(row).hide(200);
   });
   $(document).on('click', ".del-bucket", function(){
   	var bucket = getBucket(this);
-    if (!confirm("You really want to delete bucket "+bucket)) return;
   	deleteBucket(bucket);
   	$(this).parent().remove();
   });
@@ -45,7 +39,7 @@ $(document).ready(function() {
 });
 
 function fillEntries(bucket, entries) {
-  var buckName = $(bucket).children("h4").text();
+  var buckName = $(bucket).text();
 
   var container = $("<div></div>").addClass("collapse");
   var createButton = $("<button>").addClass("createEntry btn btn-primary").text("New entry");
@@ -72,9 +66,9 @@ function fillEntries(bucket, entries) {
     }
   }
   $(table).appendTo(container);
-  $(bucket).append(container);
+  $(bucket).parent().append(container);
 
-  $(bucket).children(".collapse").toggle(100);
+  $(bucket).parent().children(".collapse").toggle(100);
 }
 
 function fillBuckets(buckets) {
@@ -92,10 +86,10 @@ function getBuckets() {
 }
 
 function getBucketEnties(bucket) {
-	if ($(bucket).has(".collapse").length) {
+	if ($(bucket).parent().has(".collapse").length) {
     return;
   }
-	$.getJSON('/getEntries',{buck: $(bucket).children("h4").text()}, function(data){
+	$.getJSON('/getEntries',{buck: $(bucket).text()}, function(data){
 
 		fillEntries(bucket, data);
 });
@@ -171,6 +165,7 @@ function showButtos(row) {
     var bucket = getBucket(row);
 
     var isNew = $(row).find(".old-key").val() != key;
+    alert($(row).find(".old-key").val());
 
     $(row).find(".old-key").val(key);
     $(row).find(".old-value").val(value);
@@ -178,9 +173,8 @@ function showButtos(row) {
 
     stopEditing();
     if(isNew){
-      var bucket = $(row).parents(".bucket")
-      $(".collapse", bucket).remove();
-      getBucketEnties(bucket);
+      alert("New");
+      getBucketEnties($(this).parents(".bucket"));
     }
 
   })
