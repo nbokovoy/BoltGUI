@@ -109,7 +109,6 @@ function deleteBucket(bucket){
 function deleteBucketEntry(bucket, key) {
 	$.post('/delEntry',{bucket:bucket,key:key}, function( data ) {
 });
-  alert("Deleting from " + bucket + " key: " + key);
 }
 
 function saveBucketEntry(bucket, key, value) {
