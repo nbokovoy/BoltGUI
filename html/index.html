@@ -52,7 +52,10 @@
 
         <script type="text/ng-template" id="editmodal.html">
           <div class="modal-header">
-              <h3 class="modal-title">Im a modal!</h3>
+              <h3 class="modal-title">
+                <div ng-if="isNew">Create new entry</div>
+                <div ng-if="!isNew">Edit entry</div>
+              </h3>
           </div>
           <div class="modal-body">
                   <textarea ng-if="isNew" placeholder="New key here" ng-model="newEntry.key"></textarea>

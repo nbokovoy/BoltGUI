@@ -1,4 +1,4 @@
-.cross:before  { content: "\2718"; }
+.cross:before  { content: "\2718"; color: red; }
 
 
 h4 {
@@ -12,4 +12,11 @@ h4 {
 textarea { 
    resize:vertical;/*will prevent resizing horizontally*/ 
    width: 49%;
+}
+
+.btn-exit{
+	display: inline;
+}
+h2{
+	display: inline;
 }
