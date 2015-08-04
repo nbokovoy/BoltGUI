@@ -14,17 +14,19 @@ import (
 var (
 	curDir string
 
-	dbpath = "boltdb.db"
-
-	port = flag.String("port", "8080", "Set port for server.")
-	dir  = flag.String("path", "boltdb.db", "Set path to bolt db file.")
+	port   = flag.String("port", "8080", "Set port for server.")
+	dbpath = flag.String("path", "path-to-db", "Set path to bolt db file.")
 )
 
 func main() {
 	curDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
 	flag.Parse()
 
-	dbpath = *dir
+	if *dbpath == "path-to-db" {
+		fmt.Println("path parameter required")
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	http.HandleFunc("/exit", exit)
 	http.HandleFunc("/getBuckets", getBucketsHandler)
@@ -89,13 +91,10 @@ func exit(w http.ResponseWriter, r *http.Request) {
 }
 
 func delEntry(bucket, key string) {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := db.Update(func(tx *bolt.Tx) error {
 		buck := tx.Bucket([]byte(bucket))
 		return buck.Delete([]byte(key))
 	})
@@ -106,13 +105,10 @@ func delEntry(bucket, key string) {
 }
 
 func delBucket(bucket string) {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := db.Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(bucket))
 	})
 
@@ -122,13 +118,10 @@ func delBucket(bucket string) {
 }
 
 func setEntry(bucket, key, value string) {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := db.Update(func(tx *bolt.Tx) error {
 		buck := tx.Bucket([]byte(bucket))
 		return buck.Put([]byte(key), []byte(value))
 	})
@@ -139,13 +132,10 @@ func setEntry(bucket, key, value string) {
 }
 
 func setBucket(bucket string) {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket([]byte(bucket))
 		return err
 	})
@@ -156,10 +146,7 @@ func setBucket(bucket string) {
 }
 
 func getEntries(bucket string) []Entry {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
 	entries := []Entry{}
@@ -177,10 +164,7 @@ func getEntries(bucket string) []Entry {
 }
 
 func getBuckets() []string {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	db := getDb()
 	defer db.Close()
 
 	bucketsList := []string{}
@@ -192,6 +176,15 @@ func getBuckets() []string {
 		return nil
 	})
 	return bucketsList
+}
+
+func getDb() *bolt.DB {
+	db, err := bolt.Open(*dbpath, 0600, nil)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return db
 }
 
 type Entry struct {
