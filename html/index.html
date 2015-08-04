@@ -1,37 +1,71 @@
 <!doctype html>
-<html>
-
-<head>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-  <link rel="stylesheet" type="text/css" href="css/main.css">
-  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
-  <script src="https://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
-  <script src="js/main.js"></script>
-</head>
-
-<body>
-<div class="container">
-	<div class="row">
-		<form id="new-bucket-form" class="form-inline">
+<html ng-app="BoltGUI">
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
 
 
-		      <input type="text" class="hiden form-control" id="bucket" placeholder="Bucket name">
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.3/angular.min.js"></script>
+    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="js/ui-bootstrap-tpls-0.13.2.min.js"></script>
+    <script type="text/javascript" src="js/boltguiapp.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      
+      <div ng-controller="BucketsController as bucketsList">
+        <alert ng-repeat="alert in bucketsList.alerts" type="{{alert.type}}" close="bucketsList.closeAlert($index)">{{alert.msg}}</alert>
+        <h2>Buckets</h2>
+        <button class="btn btn-danger pull-right btn-exit" ng-click="bucketsList.exit()">Exit</button>
+          <div ng-repeat="bucket in bucketsList.buckets" class="bucket">
+            <div class='cross btn btn-xs' ng-click="bucketsList.delBucket(bucket)"></div>
+            <h4 ng-click="bucketsList.getEntries(bucket.name)" role="button" data-toggle="collapse" href="#bucket-{{bucket.name}}" aria-expanded="true" aria-controls="bucket-{{bucket.name}}">{{bucket.name}}</h4>
+
+            <div class="collapse" id="bucket-{{bucket.name}}">
+              <div class="well">
+                <button type="button" class="btn btn-primary" ng-click="bucketsList.addEntry(bucket)">New entry</button>
+                <table class="table">
+                  <tr>
+                    <th></th>
+                    <th>Key</th>
+                    <th>Value</th>
+                  </tr>
+                  <tr ng-repeat="entry in bucket.entries">
+                    <td class="cross" role="button" ng-click="bucketsList.removeEntry(bucket, $index)"></td>
+                    <td>{{entry.key}}</td> 
+                    <td>{{entry.value}}</td>
+                    <td ng-click="bucketsList.editEntry(bucket, $index)" class="btn btn-default">Edit</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+      
+        <form class="form-inline" ng-submit="bucketsList.addBucket()">
+          <input type="text" class="hiden form-control" ng-model="bucketsList.newBucketName" placeholder="Bucket name">
+          <button type="submit" class="btn btn-primary">Create bucket</button>
+        </form>
 
 
-		  <button type="submit" class="btn btn-primary">Create bucket</button>
-		</form>
+        <script type="text/ng-template" id="editmodal.html">
+          <div class="modal-header">
+              <h3 class="modal-title">Im a modal!</h3>
+          </div>
+          <div class="modal-body">
+                  <textarea ng-if="isNew" placeholder="New key here" ng-model="newEntry.key"></textarea>
+                  <textarea readonly ng-if="!isNew" ng-model="newEntry.key"></textarea>
 
-		<button class="exit-btn btn btn-danger pull-right">Exit</button>
-		
-	 </div>
-	 
-	 <div class="container">
-		 <h3>Buckets:</h3>
-		 <div class="buckets">
-		 	
-		 </div>
-	 </div>
- 
-</body>
-
+                  <textarea placeholder="New value here" ng-model="newEntry.value"></textarea>
+          </div>
+          <div class="modal-footer">
+              <button class="btn btn-primary" ng-click="ok()">OK</button>
+              <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+          </div>
+        </script>
+      </div>
+    </div>
+  </body>
 </html>

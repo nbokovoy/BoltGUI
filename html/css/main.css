@@ -5,24 +5,11 @@ h4 {
 	display: inline;
 }
 
-
-#new-bucket-form {
-	float: left;
-}
-
-.collapse {
-  max-height: 600px;
-  overflow: auto;
-}
-
 .del-entry {
 	width: 25px;
 }
 
-.key {
-	width: 100%;
-}
-
-.value {
-	width: 60%;
+textarea { 
+   resize:vertical;/*will prevent resizing horizontally*/ 
+   width: 49%;
 }

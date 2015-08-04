@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,15 +15,16 @@ var (
 	curDir string
 
 	dbpath = "boltdb.db"
-	usage  = "Usage: BoltGUI [port] [PathToBoltDB]"
+
+	port = flag.String("port", "8080", "Set port for server.")
+	dir  = flag.String("path", "boltdb.db", "Set path to bolt db file.")
 )
 
 func main() {
 	curDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	flag.Parse()
 
-	if len(os.Args) > 1 {
-		dbpath = os.Args[1]
-	}
+	dbpath = *dir
 
 	http.HandleFunc("/exit", exit)
 	http.HandleFunc("/getBuckets", getBucketsHandler)
@@ -32,16 +34,8 @@ func main() {
 	http.HandleFunc("/setEntry", setEntryHandler)
 	http.HandleFunc("/setBucket", setBucketHandler)
 
-	http.HandleFunc("/getData", getData)
-
-	http.Handle("/", http.FileServer(http.Dir(curDir+"/html")))
-	http.ListenAndServe(":8080", nil)
-}
-
-func getData(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`[{"name":"Bucket1","entries":[{"key":"key1","value":"value1"}]},{"name":"Bucket2","entries":[{"key":"key1","value":"value1"}]}]`))
+	http.Handle("/", http.FileServer(Dir(false, "/html")))
+	http.ListenAndServe(":"+*port, nil)
 }
 
 func delEntryHandler(w http.ResponseWriter, r *http.Request) {
