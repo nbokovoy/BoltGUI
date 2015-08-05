@@ -23,9 +23,8 @@ func main() {
 	flag.Parse()
 
 	if *dbpath == "path-to-db" {
-		fmt.Println("path parameter required")
-		flag.Usage()
-		os.Exit(1)
+		fmt.Print("Enter path to db:\n>")
+		fmt.Scanf("%v", dbpath)
 	}
 
 	http.HandleFunc("/exit", exit)
