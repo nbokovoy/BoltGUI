@@ -35,7 +35,8 @@ func main() {
 	http.HandleFunc("/setEntry", setEntryHandler)
 	http.HandleFunc("/setBucket", setBucketHandler)
 
-	http.Handle("/", http.FileServer(Dir(false, "/html")))
+	//http.Handle("/", http.FileServer(Dir(false, "/html")))
+	http.Handle("/", http.FileServer(http.Dir("html")))
 	http.ListenAndServe(":"+*port, nil)
 }
 
@@ -144,22 +145,23 @@ func setBucket(bucket string) {
 	}
 }
 
-func getEntries(bucket string) []Entry {
+func getEntries(bucketName string) Bucket {
 	db := getDb()
 	defer db.Close()
 
-	entries := []Entry{}
+	resultBucket := Bucket{
+		Name:       bucketName,
+		Subbuckets: []Bucket{},
+		Entries:    []Entry{},
+	}
 
 	db.View(func(tx *bolt.Tx) error {
-		curBucket := tx.Bucket([]byte(bucket))
+		curBucket := tx.Bucket([]byte(bucketName))
 
-		curBucket.ForEach(func(k, v []byte) error {
-			entries = append(entries, Entry{string(k), string(v)})
-			return nil
-		})
+		resultBucket.fill(curBucket)
 		return nil
 	})
-	return entries
+	return resultBucket
 }
 
 func getBuckets() []string {
@@ -189,4 +191,51 @@ func getDb() *bolt.DB {
 type Entry struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+// Bucket TODO
+type Bucket struct {
+	Name       string   `json:"name"`
+	Subbuckets []Bucket `json:"subbuckets"`
+	Entries    []Entry  `json:"entries"`
+}
+
+func (b *Bucket) fill(bucket *bolt.Bucket) {
+	//fmt.Println("Fill bucket ", bucket.Root())
+	//fill subbuckets
+	// bucket.Tx().ForEach(func(name []byte, buck *bolt.Bucket) error {
+	// 	fmt.Println("subbucket ", string(name))
+	// 	subbuck := Bucket{
+	// 		Name: string(name),
+	// 	}
+	// 	fmt.Println("start fill ", string(name))
+	// 	subbuck.fill(buck)
+
+	// 	b.Subbuckets = append(b.Subbuckets, subbuck)
+	// 	return nil
+	// })
+
+	//fill entries
+	bucket.ForEach(func(k, v []byte) error {
+		if len(v) == 0 { //subbucket
+			sb := bucket.Bucket(k)
+			if sb == nil {
+				b.Entries = append(b.Entries, Entry{string(k), string(v)})
+				return nil
+			}
+
+			subbuck := Bucket{
+				Name:       string(k),
+				Subbuckets: []Bucket{},
+				Entries:    []Entry{},
+			}
+			subbuck.fill(sb)
+
+			b.Subbuckets = append(b.Subbuckets, subbuck)
+
+		} else {
+			b.Entries = append(b.Entries, Entry{string(k), string(v)})
+		}
+		return nil
+	})
 }

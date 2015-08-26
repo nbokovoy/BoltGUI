@@ -10,7 +10,8 @@
     
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script src="js/ui-bootstrap-tpls-0.13.2.min.js"></script>
-    <script type="text/javascript" src="js/boltguiapp.js"></script>
+    <script src="js/recursiongelper.js"></script>
+    <script src="js/boltguiapp.js"></script>
   </head>
   <body>
     <div class="container">
@@ -19,29 +20,13 @@
         <alert ng-repeat="alert in bucketsList.alerts" type="{{alert.type}}" close="bucketsList.closeAlert($index)">{{alert.msg}}</alert>
         <h2>Buckets</h2>
         <button class="btn btn-danger pull-right btn-exit" ng-click="bucketsList.exit()">Exit</button>
-          <div ng-repeat="bucket in bucketsList.buckets" class="bucket">
-            <div class='cross btn btn-xs' ng-click="bucketsList.delBucket(bucket)"></div>
-            <h4 ng-click="bucketsList.getEntries(bucket.name)" role="button" data-toggle="collapse" href="#bucket-{{bucket.name}}" aria-expanded="true" aria-controls="bucket-{{bucket.name}}">{{bucket.name}}</h4>
+          <div >
 
-            <div class="collapse" id="bucket-{{bucket.name}}">
-              <div class="well">
-                <button type="button" class="btn btn-primary" ng-click="bucketsList.addEntry(bucket)">New entry</button>
-                <table class="table">
-                  <tr>
-                    <th></th>
-                    <th>Key</th>
-                    <th>Value</th>
-                  </tr>
-                  <tr ng-repeat="entry in bucket.entries">
-                    <td class="cross" role="button" ng-click="bucketsList.removeEntry(bucket, $index)"></td>
-                    <td>{{entry.key}}</td> 
-                    <td>{{entry.value}}</td>
-                    <td ng-click="bucketsList.editEntry(bucket, $index)" class="btn btn-default">Edit</td>
-                  </tr>
-                </table>
-              </div>
-            </div>
+            <bucket-view ng-repeat="bucket in bucketsList.buckets" class="bucket" bucket="bucket" parent="bucketsList"> </bucket-view>
+
           </div>
+          
+
 
       
         <form class="form-inline" ng-submit="bucketsList.addBucket()">

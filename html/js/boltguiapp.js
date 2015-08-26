@@ -1,4 +1,4 @@
-angular.module('BoltGUI', ['ui.bootstrap']);
+angular.module('BoltGUI', ['ui.bootstrap', 'RecursionHelper']);
 angular.module('BoltGUI')
   .controller('BucketsController', function($scope, $http, $modal) {
     var bucketsList = this;
@@ -10,13 +10,76 @@ angular.module('BoltGUI')
 
     $http.get('/getBuckets').success(function(response){
       response.forEach(function(value){
-        bucketsList.buckets.push({
-        name: value,
-        entries: []
-      })
+        bucketsList.buckets.push(NewBucket({
+          name:value,
+          entries: [],
+          subbuckets: []
+        }, bucketsList)
+        )
+        bucketsList.getEntries(value)
       });
     });
-    
+
+    function NewEntry(key, value){
+      var entry = {
+        key: key, 
+        value: value,
+        edit: function(){
+          console.log("start edit");
+          console.log(this);
+        }
+      }
+      return entry
+    }
+
+    function NewBucket(bucket, parent){
+      var newBucket = {
+        parent: parent,
+        name: bucket.name,
+        entries: [],
+        subbuckets: [],
+        addEntry: function(entry){
+          this.entries.push(entry);
+        },
+        removeEntry: function(entry){
+          var index = this.entries.indexOf(entry);
+          if (index > -1) {
+            this.entries.splice(index, 1);
+          }
+        },
+        addBucket: function(name){
+          this.subbuckets.push(NewBucket({
+                      name: name,
+                      entries: [],
+                      subbuckets: []
+                    }, this));
+        },
+        removeBucket: function(bucket){
+          var index = this.subbuckets.indexOf(bucket);
+          if (index > -1) {
+            this.subbuckets.splice(index, 1);
+          }
+        },
+        getFullName: function(){
+          return this.parent.getFullName() + this.name;
+        }
+      }
+
+      bucket.entries.forEach(function(entry){
+        newBucket.entries.push(NewEntry(entry.key, entry.value));
+      });
+
+      bucket.subbuckets.forEach(function(bucket){
+        newBucket.subbuckets.push(NewBucket(bucket));
+      });
+
+      return newBucket;
+    }
+
+    bucketsList.getFullName = function(){
+      return "list";
+    }
+
     bucketsList.getEntries = function(bucket){
       $http.get('/getEntries',{params:{buck:bucket}}).success(function(response){
         var buck = bucketsList.buckets.filter(function(value){
@@ -25,8 +88,14 @@ angular.module('BoltGUI')
 
         if (buck.entries.length > 0) buck.entries = [];
 
-         response.forEach(function(entry){
-          buck.entries.push({key:entry.key, value:entry.value});
+         response.entries.forEach(function(entry){
+          buck.entries.push(NewEntry(entry.key, entry.value));
+         });
+
+         if (buck.subbuckets.length > 0) buck.subbuckets = [];
+
+         response.subbuckets.forEach(function(bucket){
+          buck.subbuckets.push(NewBucket(bucket, buck));
          });
     });
     }
@@ -52,15 +121,18 @@ angular.module('BoltGUI')
       bucketsList.newBucketName = '';
     };
 
-    bucketsList.delBucket = function(bucket){
-      $http({
-        method: 'POST',
-        url: '/delBucket',
-        data: $.param({bucket: bucket.name}),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
-      });
+    bucketsList.removeBucket = function(bucket){
+      // $http({
+      //   method: 'POST',
+      //   url: '/delBucket',
+      //   data: $.param({bucket: bucket.name}),
+      //   headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+      // });
 
-      bucketsList.buckets.splice(bucketsList.buckets.indexOf(bucket), 1);
+      var index = bucketsList.buckets.indexOf(bucket);
+          if (index > -1) {
+            bucketsList.buckets.splice(index, 1);
+          }
     };
 
     bucketsList.removeEntry = function(bucket, index){
@@ -167,3 +239,44 @@ angular.module('BoltGUI').controller('ModalInstanceCtrl', function ($scope, $mod
     $modalInstance.dismiss('cancel');
   };
 });
+
+angular.module('BoltGUI').directive('bucketView', function (RecursionHelper) {
+  return {
+    restrict: "E",
+    scope: {
+      parent: "=",
+      bucket: "=bucket"
+    },
+    template: '<div class="bucket">\
+    <div class="cross btn btn-xs" ng-click="parent.removeBucket(bucket)"></div>\
+            <h4 role="button" data-toggle="collapse" href="#{{bucket.getFullName()}}" aria-expanded="true" aria-controls="{{bucket.getFullName()}}">{{bucket.name}}</h4>\
+            <div class="collapse" id="{{bucket.getFullName()}}">\
+              <div class="well">\
+                <bucket-view class="bucket" ng-repeat="subbucket in bucket.subbuckets" bucket="subbucket" parent="bucket"></bucket-view>\
+                <button type="button" class="btn btn-primary" ng-click="bucketsList.addEntry(bucket)">New entry</button>\
+                <table class="table">\
+                  <tr>\
+                    <th></th>\
+                    <th>Key</th>\
+                    <th>Value</th>\
+                  </tr>\
+                  <tr ng-repeat="entry in bucket.entries">\
+                    <td class="cross" role="button" ng-click="bucket.removeEntry(entry)"></td>\
+                    <td>{{entry.key}}</td> \
+                    <td>{{entry.value}}</td>\
+                    <td ng-click="entry.edit()" class="btn btn-default">Edit</td>\
+                  </tr>\
+                </table>\
+              </div>\
+            </div>\
+            </div>',
+    compile: function(element) {
+            // Use the compile function from the RecursionHelper,
+            // And return the linking function(s) which it returns
+            return RecursionHelper.compile(element);
+        }
+  };
+
+});
+
+
