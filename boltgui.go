@@ -2,13 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/boltdb/bolt"
+)
+
+const (
+	delimiter = ">|_|<"
 )
 
 var (
@@ -122,7 +128,21 @@ func setEntry(bucket, key, value string) {
 	defer db.Close()
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		buck := tx.Bucket([]byte(bucket))
+		bucketChain := strings.Split(bucket, delimiter)
+		if len(bucketChain) < 1 {
+			return errors.New("empty bucket list")
+		}
+
+		buck := &bolt.Bucket{}
+
+		for i, bucketName := range bucketChain {
+			if i == 0 { //first level bucket get from tx
+				buck = tx.Bucket([]byte(bucketName))
+			} else { //else serch for subbucket
+				buck = buck.Bucket([]byte(bucketName))
+			}
+		}
+
 		return buck.Put([]byte(key), []byte(value))
 	})
 
