@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	delimiter = ">|_|<"
+	delimiter = "--"
 )
 
 var (
@@ -29,8 +29,9 @@ func main() {
 	flag.Parse()
 
 	if *dbpath == "path-to-db" {
-		fmt.Print("Enter path to db:\n>")
-		fmt.Scanf("%v", dbpath)
+		fmt.Print("Parameter -path must be set")
+		flag.Usage()
+		return
 	}
 
 	http.HandleFunc("/exit", exit)
@@ -41,8 +42,8 @@ func main() {
 	http.HandleFunc("/setEntry", setEntryHandler)
 	http.HandleFunc("/setBucket", setBucketHandler)
 
-	//http.Handle("/", http.FileServer(Dir(false, "/html")))
-	http.Handle("/", http.FileServer(http.Dir("html")))
+	http.Handle("/", http.FileServer(Dir(false, "/html")))
+
 	http.ListenAndServe(":"+*port, nil)
 }
 
@@ -101,7 +102,11 @@ func delEntry(bucket, key string) {
 	defer db.Close()
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		buck := tx.Bucket([]byte(bucket))
+		buck, err := getBucketByFullName(bucket, tx)
+		if err != nil {
+			return err
+		}
+
 		return buck.Delete([]byte(key))
 	})
 
@@ -110,12 +115,43 @@ func delEntry(bucket, key string) {
 	}
 }
 
-func delBucket(bucket string) {
+func delBucket(fullName string) {
 	db := getDb()
 	defer db.Close()
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		return tx.DeleteBucket([]byte(bucket))
+		fullName = strings.TrimPrefix(fullName, "list--")
+		bucketChain := strings.Split(fullName, delimiter)
+
+		if len(bucketChain) < 1 {
+			return errors.New("empty bucket list")
+		}
+
+		var (
+			buck        = &bolt.Bucket{}
+			deletingKey string
+		)
+
+		if len(bucketChain) == 1 {
+			return tx.DeleteBucket([]byte(bucketChain[0]))
+		}
+
+		for i, bucketName := range bucketChain {
+			switch {
+			case i == 0: //first level bucket get from tx
+				buck = tx.Bucket([]byte(bucketName))
+			case i == len(bucketChain)-1: // save name of last bucket in chain and parent it's parent bucket
+				deletingKey = bucketName
+			default:
+				if buck == nil {
+					return errors.New("Bucket not found.")
+				}
+				buck = buck.Bucket([]byte(bucketName))
+			}
+
+		}
+
+		return buck.DeleteBucket([]byte(deletingKey))
 	})
 
 	if err != nil {
@@ -128,19 +164,9 @@ func setEntry(bucket, key, value string) {
 	defer db.Close()
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucketChain := strings.Split(bucket, delimiter)
-		if len(bucketChain) < 1 {
-			return errors.New("empty bucket list")
-		}
-
-		buck := &bolt.Bucket{}
-
-		for i, bucketName := range bucketChain {
-			if i == 0 { //first level bucket get from tx
-				buck = tx.Bucket([]byte(bucketName))
-			} else { //else serch for subbucket
-				buck = buck.Bucket([]byte(bucketName))
-			}
+		buck, err := getBucketByFullName(bucket, tx)
+		if err != nil {
+			return err
 		}
 
 		return buck.Put([]byte(key), []byte(value))
@@ -258,4 +284,26 @@ func (b *Bucket) fill(bucket *bolt.Bucket) {
 		}
 		return nil
 	})
+}
+
+func getBucketByFullName(fullName string, tx *bolt.Tx) (*bolt.Bucket, error) {
+	fullName = strings.TrimPrefix(fullName, "list--")
+	bucketChain := strings.Split(fullName, delimiter)
+	if len(bucketChain) < 1 {
+		return nil, errors.New("empty bucket list")
+	}
+
+	buck := &bolt.Bucket{}
+
+	for i, bucketName := range bucketChain {
+		if i == 0 { //first level bucket get from tx
+			buck = tx.Bucket([]byte(bucketName))
+		} else { //else serch for subbucket
+			if buck == nil {
+				return nil, errors.New("Bucket not found.")
+			}
+			buck = buck.Bucket([]byte(bucketName))
+		}
+	}
+	return buck, nil
 }
