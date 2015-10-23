@@ -5,12 +5,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/boltdb/bolt"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -22,6 +25,7 @@ var (
 
 	port   = flag.String("port", "8080", "Set port for server.")
 	dbpath = flag.String("path", "path-to-db", "Set path to bolt db file.")
+	coding = flag.String("coding", "text", "Type of value encding [text, mspack]")
 )
 
 func main() {
@@ -43,6 +47,7 @@ func main() {
 	http.HandleFunc("/setBucket", setBucketHandler)
 
 	http.Handle("/", http.FileServer(Dir(false, "/html")))
+	//http.Handle("/", http.FileServer(http.Dir("html")))
 
 	http.ListenAndServe(":"+*port, nil)
 }
@@ -169,7 +174,7 @@ func setEntry(bucket, key, value string) {
 			return err
 		}
 
-		return buck.Put([]byte(key), []byte(value))
+		return buck.Put([]byte(key), encodeEntry(value))
 	})
 
 	if err != nil {
@@ -280,10 +285,64 @@ func (b *Bucket) fill(bucket *bolt.Bucket) {
 			b.Subbuckets = append(b.Subbuckets, subbuck)
 
 		} else {
-			b.Entries = append(b.Entries, Entry{string(k), string(v)})
+			b.Entries = append(b.Entries, decodeEntry(k, v))
 		}
 		return nil
 	})
+}
+
+func encodeEntry(value string) []byte {
+	switch *coding {
+
+	case "text":
+		return []byte(value)
+	case "mspack":
+		var v interface{}
+
+		err := msgpack.Unmarshal([]byte(value), &v)
+		if err != nil {
+			log.Println(err)
+		}
+
+		b, err := yaml.Marshal(v)
+		if err != nil {
+			log.Println(err)
+		}
+
+		return b
+	}
+
+	return nil
+}
+
+func decodeEntry(key, value []byte) Entry {
+	switch *coding {
+
+	case "text":
+		return Entry{
+			Key:   string(key),
+			Value: string(value),
+		}
+	case "mspack":
+		var v interface{}
+
+		err := msgpack.Unmarshal(value, &v)
+		if err != nil {
+			log.Println(err)
+		}
+
+		b, err := yaml.Marshal(v)
+		if err != nil {
+			log.Println(err)
+		}
+
+		return Entry{
+			Key:   string(key),
+			Value: string(b),
+		}
+	}
+
+	return Entry{}
 }
 
 func getBucketByFullName(fullName string, tx *bolt.Tx) (*bolt.Bucket, error) {
