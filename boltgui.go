@@ -299,12 +299,12 @@ func encodeEntry(value string) []byte {
 	case "mspack":
 		var v interface{}
 
-		err := msgpack.Unmarshal([]byte(value), &v)
+		err := yaml.Unmarshal([]byte(value), &v)
 		if err != nil {
 			log.Println(err)
 		}
 
-		b, err := yaml.Marshal(v)
+		b, err := msgpack.Marshal(v)
 		if err != nil {
 			log.Println(err)
 		}
