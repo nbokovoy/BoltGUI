@@ -13,7 +13,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -299,7 +298,7 @@ func encodeEntry(value string) []byte {
 	case "mspack":
 		var v interface{}
 
-		err := yaml.Unmarshal([]byte(value), v)
+		err := json.Unmarshal([]byte(value), &v)
 		if err != nil {
 			log.Println(err)
 		}
@@ -326,12 +325,18 @@ func decodeEntry(key, value []byte) Entry {
 	case "mspack":
 		var v interface{}
 
-		err := msgpack.Unmarshal(value, v)
+		err := msgpack.Unmarshal(value, &v)
 		if err != nil {
 			log.Println(err)
 		}
 
-		b, err := yaml.Marshal(v)
+		switch value := v.(type) {
+
+		case map[interface{}]interface{}:
+			v = toStringMap(value)
+		}
+
+		b, err := json.Marshal(v)
 		if err != nil {
 			log.Println(err)
 		}
@@ -365,4 +370,15 @@ func getBucketByFullName(fullName string, tx *bolt.Tx) (*bolt.Bucket, error) {
 		}
 	}
 	return buck, nil
+}
+
+func toStringMap(source map[interface{}]interface{}) map[string]interface{} {
+	var result = map[string]interface{}{}
+
+	for k, v := range source {
+		strKey := fmt.Sprint(k)
+		result[strKey] = v
+	}
+
+	return result
 }
