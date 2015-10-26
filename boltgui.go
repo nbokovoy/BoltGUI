@@ -299,7 +299,7 @@ func encodeEntry(value string) []byte {
 	case "mspack":
 		var v interface{}
 
-		err := yaml.Unmarshal([]byte(value), &v)
+		err := yaml.Unmarshal([]byte(value), v)
 		if err != nil {
 			log.Println(err)
 		}
@@ -326,7 +326,7 @@ func decodeEntry(key, value []byte) Entry {
 	case "mspack":
 		var v interface{}
 
-		err := msgpack.Unmarshal(value, &v)
+		err := msgpack.Unmarshal(value, v)
 		if err != nil {
 			log.Println(err)
 		}
