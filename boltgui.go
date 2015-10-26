@@ -377,7 +377,14 @@ func toStringMap(source map[interface{}]interface{}) map[string]interface{} {
 
 	for k, v := range source {
 		strKey := fmt.Sprint(k)
-		result[strKey] = v
+		switch value := v.(type) {
+
+		case map[interface{}]interface{}:
+			result[strKey] = toStringMap(value)
+		default:
+			result[strKey] = v
+		}
+
 	}
 
 	return result
