@@ -15,6 +15,8 @@ import (
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
+//go:generate esc -o html.go html
+
 const (
 	delimiter = "--"
 )
