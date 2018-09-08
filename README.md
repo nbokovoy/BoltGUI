@@ -27,7 +27,8 @@ $ BoltGUI
 
 and enter path to bolt file in stdin. Server will started on 8080 port
 
-###TODO:
+### TODO
+
 - [ ] Add support for nested buckets
 - [ ] Search over bucket
 - [ ] Load entries while scrolling
